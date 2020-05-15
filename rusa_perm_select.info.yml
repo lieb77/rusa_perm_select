@@ -1,0 +1,6 @@
+name: RUSA Perm Select
+type: module
+description: RUSA Permenant Selection
+core: 8.x
+version: 8.x-1.0.0
+package: RUSA
