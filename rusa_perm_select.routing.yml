@@ -1,8 +1,11 @@
-rusa_perm_select.rba_form:
-  path: '/rusa/perm-select'
+rusa_perm_select.form:
+  path: '/rusa/perm/select'
   defaults:
-    _title: 'Select permanent'
+    _title: 'Search for a permanent'
     _form: '\Drupal\rusa_perm_select\Form\RusaPermForm'
   requirements:
-    _access: 'TRUE'
+    _permission: 'create rusa perm registration'
 
+rusa.home:
+  path: '/'
+  
