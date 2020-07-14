@@ -26,7 +26,9 @@ use Drupal\Core\Session\AccountProxy;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Form\ConfirmFormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Routing\TrustedRedirectResponse;
 use Drupal\Core\Url;
+use Drupal\Core\Link;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -43,6 +45,7 @@ class RusaPermForm extends ConfirmFormBase {
     protected $step;
     protected $uinfo;
     protected $perms;
+    protected $pid; 
     
     /**
      * @getFormID
@@ -110,7 +113,14 @@ class RusaPermForm extends ConfirmFormBase {
      *
      */
     public function buildForm(array $form, FormStateInterface $form_state) { 
-
+    
+        // PID can be passed as a query parameter
+        $pid =  \Drupal::request()->query->get('pid');
+        if (!empty($pid)) {
+            $this->pid  = $pid;
+            $this->step = 'confirm';
+        }
+        
         /**
          * Search form
          *
@@ -176,6 +186,20 @@ class RusaPermForm extends ConfirmFormBase {
                     $perm->name,
                     $perm->statelist,
                 ];
+                
+                $links['select'] = [
+				    'title' => $this->t('Ride this'),
+				    'url'  => Url::fromRoute('rusa_perm_select.form', ['pid' => $perm->pid]),
+			    ];
+            
+			    // Add operations links
+			    $row[] = [ 
+				    'data' => [
+					    '#type' => 'operations', 
+					    '#links' => $links,
+			        ],
+			    ];
+                
                 $rows[] = $row;
             }
             
@@ -194,7 +218,7 @@ class RusaPermForm extends ConfirmFormBase {
             $form = parent::buildForm($form, $form_state);
             
             // Display the selected perm
-            $form['perm'] = $this->get_perm($form_state->getValue('pid'));
+            $form['perm'] = $this->get_perm($this->pid);
                         
             $form['remember'] = [
                 '#type'   => 'item',
@@ -273,7 +297,6 @@ class RusaPermForm extends ConfirmFormBase {
         }
         elseif ($this->step === 'confirm') {
             // Route has been selected redirect to SmartWaiver
-            $pid = $form_state->getValue('pid');
             $url = $this->smartwaiver_url($this->pid);
             $response = new TrustedRedirectResponse($url);
             $form_state->setResponse($response);        
@@ -310,7 +333,7 @@ class RusaPermForm extends ConfirmFormBase {
      */
     protected function smartwaiver_url($pid) { 
         // Get URL from settings
-        $swurl = RusaPermReg::getSwUrl();
+        $swurl = RusaPermReg::getSwUrl();        
         $swurl .= '?wautofill_firstname='   . $this->uinfo['fname'];
         $swurl .= '&wautofill_lastname='    . $this->uinfo['lname'];
         $swurl .= '&wautofill_dobyyyymmdd=' . $this->uinfo['dob'];
@@ -319,5 +342,31 @@ class RusaPermForm extends ConfirmFormBase {
         return $swurl;
         
     }
+    
+    /**
+	 * Get a table of current registrations
+     *
+     */
+     protected function get_perm($pid) {        
+		// We have to go back and get it again
+		$permobj = new RusaPermanents(['key' => 'pid', 'val' => $pid]);
+		$perm    = $permobj->getPermanent($pid);
+		
+		$row = [
+            'pid'       => $pid,
+            'pname'     => $perm->name,
+            'pdist'     => $perm->dist, 
+            'pclimb'    => $perm->climbing, 
+            'pdesc'     => $perm->description,
+        ];
+		
+		return [
+			'#type'    => 'table',
+			'#header'   => ['Route #', 'Name', 'Km', 'Climb (ft.)', 'Description' ],
+			'#rows'     => [$row],
+			'#responsive' => TRUE,
+			'#attributes' => ['class' => ['rusa-table']],
+		];
+	}
     
 } // End of class  
