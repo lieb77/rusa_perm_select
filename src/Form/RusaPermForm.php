@@ -189,40 +189,58 @@ class RusaPermForm extends ConfirmFormBase {
         elseif ($this->step === 'select') {
                 
             // build a table of perms 
-            foreach ($this->perms as $pid => $perm) {
-                $row = [
-                    $perm->pid,
-                    $perm->startstate . ': ' . $perm->startcity,
-                    $perm->dist,
-                    $perm->climbing,
-                    $perm->name,
-                    $perm->statelist,
+            if (empty($this->perms)) {
+                $form['empty'] = [
+                    '#type'   => 'item',
+                    '#markup' => $this->t('There are no routes that match your query'),
                 ];
-                
-                $links['select'] = [
-				    'title' => $this->t('Ride this'),
-				    'url'  => Url::fromRoute('rusa_perm_select.form', ['pid' => $perm->pid]),
-			    ];
-            
-			    // Add operations links
-			    $row[] = [ 
-				    'data' => [
-					    '#type' => 'operations', 
-					    '#links' => $links,
-			        ],
-			    ];
-                
-                $rows[] = $row;
             }
+            else {
+                foreach ($this->perms as $pid => $perm) {
+                    $row = [
+                        $perm->pid,
+                        $perm->startstate . ': ' . $perm->startcity,
+                        $perm->dist,
+                        $perm->climbing,
+                        $perm->name,
+                        $perm->statelist,
+                        $perm->description,
+                    ];
+                
+                    $links['select'] = [
+                        'title' => $this->t('Ride this'),
+                        'url'  => Url::fromRoute('rusa_perm_select.form', ['pid' => $perm->pid]),
+                    ];
             
-            $form['select'] = [
-                '#type'     => 'table',
-			    '#header'   => ['Route #', 'Location', 'Km', 'Climb (ft.)', 'Name', 'States'],
-			    '#rows'     => $rows,
-			    '#responsive' => TRUE,
-			    '#attributes' => ['class' => ['rusa-table']],
-			];
-           
+                    // Add operations links
+                    $row[] = [ 
+                        'data' => [
+                            '#type' => 'operations', 
+                            '#links' => $links,
+                        ],
+                    ];
+                
+                    $rows[] = $row;
+                }
+            
+                $form['select'] = [
+                    '#type'     => 'table',
+                    '#header'   => ['Route #', 'Location', 'Km', 'Climb (ft.)', 'Name', 'States', 'Description'],
+                    '#rows'     => $rows,
+                    '#responsive' => TRUE,
+                    '#attributes' => ['class' => ['rusa-table']],
+                ];
+            }
+             // Actions wrapper
+            $form['actions'] = [
+                '#type' => 'actions'
+            ];
+
+            // Default submit button 
+            $form['actions']['submit'] = [
+                '#type'   => 'submit',
+                '#value'  => $this->t('Search again'),
+            ];            
         }
         
         // Confirmation step
@@ -257,7 +275,12 @@ class RusaPermForm extends ConfirmFormBase {
      *
      */
     public function validateForm(array &$form, FormStateInterface $form_state) {
-    
+         $action = $form_state->getTriggeringElement();
+         if ($this->step === 'select' && $action['#type'] == 'submit') {
+            $form_state->setRebuild();
+            $this->step = 'search';
+            return;
+        }
       
     } // End function verify
 
