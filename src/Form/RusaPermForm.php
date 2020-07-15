@@ -150,6 +150,18 @@ class RusaPermForm extends ConfirmFormBase {
                     '400' => '400-499 km'],
             ];
 
+            $form['type'] = [
+                '#type'     => 'select',
+                '#title'    => $this->t('Shape'),
+                '#options'  => [
+                    'ALL'   => 'All shapes',
+                    'LOOP'  => 'Loop',
+                    'OB'    => 'Out and Back',
+                    'PP'    => 'Point to Point',
+                ],
+            ];
+                    
+
             // Name
             $form['name'] = [
                 '#type'     => 'textfield',
@@ -284,6 +296,11 @@ class RusaPermForm extends ConfirmFormBase {
             if ( ! empty($values['dist'])) {
                 $filters['dist'] = $values['dist'];
             }
+            
+            if ( (! empty($values['type'])) && ($values['type'] != 'ALL')) {
+                $filters['type'] = $values['type'];
+            }
+            
             if ( ! empty($values['name'])) {
                 $filters['name'] = $values['name'];
             }
