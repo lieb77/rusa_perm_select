@@ -382,6 +382,7 @@ class RusaPermForm extends ConfirmFormBase {
         return $swurl;
         
     }
+   
     
     /**
 	 * Get a table of current registrations
@@ -392,18 +393,38 @@ class RusaPermForm extends ConfirmFormBase {
 		$permobj = new RusaPermanents(['key' => 'pid', 'val' => $pid]);
 		$perm    = $permobj->getPermanent($pid);
 		
-		$row = [
-            'pid'       => $pid,
-            'pname'     => $perm->name,
-            'pdist'     => $perm->dist, 
-            'pclimb'    => $perm->climbing, 
-            'pdesc'     => $perm->description,
+		// Get shapes
+		$ptypes = ['LOOP' => 'Loop', 'OB' => 'Out and back', 'PP' => 'Point to point'];
+		
+		// Get location
+		if ($perm->type == 'PP') {
+		    $loc = "From $perm->startcity, $perm->startstate to $perm->endcity, $perm->endstate";
+		}
+		else {
+		    $loc = "Starts and ends in $perm->startcity, $perm->startstate";
+		}
+		
+	    // Get RwGPS link
+	    $url = URL::fromUri($perm->url);
+	    $url->setOption('attributes',  ['target' => '_blank']);
+		$rwgps = Link::fromTextAndUrl($perm->url, $url)->toString();
+			
+		$rows = [
+            ['Route #', ['data' => "$pid   <-- Copy this so you can paste it in the waiver.", 'class' => ['rusa-em']]],
+            ['Route name',      $perm->name],
+            ['Distance (km)',   $perm->dist], 
+            ['Shape',           $ptypes[$perm->type]],  
+            ['Climbing (ft)',   $perm->climbing],
+            ['Location',        $loc],
+            ['Dates available', $perm->dates],
+            ['States covered',  $perm->statelist],
+            ['Description',     $perm->description],
+            ['Ride With GPS',   $rwgps], 
         ];
 		
 		return [
-			'#type'    => 'table',
-			'#header'   => ['Route #', 'Name', 'Km', 'Climb (ft.)', 'Description' ],
-			'#rows'     => [$row],
+			'#type'       => 'table',			
+			'#rows'       => $rows,
 			'#responsive' => TRUE,
 			'#attributes' => ['class' => ['rusa-table']],
 		];
